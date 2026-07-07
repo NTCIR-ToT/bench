@@ -7,6 +7,10 @@ import sys
 import tempfile
 from pathlib import Path
 
+from tira.io_utils import to_prototext
+
+SELECTED_MEASURES = ("num_q", "num_ret", "recip_rank", "recall_100", "ndcg_cut_10")
+
 
 def usage() -> str:
     return "Usage: /eval.py <inputDataset> <inputRun> <outputDir>"
@@ -45,6 +49,42 @@ def copy_run_to_temp(run_path: Path, destination: Path) -> None:
     shutil.copyfile(run_path, destination)
 
 
+def parse_metric_value(value: str):
+    try:
+        if any(marker in value for marker in (".", "e", "E")):
+            return float(value)
+        return int(value)
+    except ValueError:
+        return value
+
+
+def parse_trec_eval_output(trec_eval_output: str) -> dict:
+    ret = {}
+
+    for line in trec_eval_output.splitlines():
+        parts = line.split()
+        if len(parts) != 3:
+            continue
+
+        metric, scope, value = parts
+        if scope != "all" or metric == "runid":
+            continue
+
+        if metric in SELECTED_MEASURES:
+            ret[metric] = parse_metric_value(value)
+
+    return ret
+
+
+def run_trec_eval(qrels_path: Path, run_path: Path, measures=None) -> str:
+    command = ["trec_eval"]
+    if measures is not None:
+        command.extend(["-m", measures])
+    command.extend([str(qrels_path), str(run_path)])
+    result = subprocess.run(command, check=True, capture_output=True, text=True)
+    return result.stdout
+
+
 def main() -> int:
     if len(sys.argv) != 4:
         print(usage(), file=sys.stderr)
@@ -63,14 +103,17 @@ def main() -> int:
         temp_run_path = temp_dir / "run.txt"
         copy_run_to_temp(run_path, temp_run_path)
 
-        result = subprocess.run(
-            ["trec_eval", str(qrels_path), str(temp_run_path)],
-            check=True,
-            capture_output=True,
-            text=True,
-        )
+        full_output = run_trec_eval(qrels_path, temp_run_path)
+        recall_output = run_trec_eval(qrels_path, temp_run_path, "recall.10,100,1000")
+        ndcg_output = run_trec_eval(qrels_path, temp_run_path, "ndcg_cut.10,100,1000")
 
-    (output_dir / "trec_eval.txt").write_text(result.stdout, encoding="utf-8")
+    combined_output = full_output + recall_output + ndcg_output
+    trec_eval_path = output_dir / "trec_eval.txt"
+    trec_eval_path.write_text(combined_output, encoding="utf-8")
+    prototext = to_prototext(
+        [parse_trec_eval_output(combined_output)]
+    )
+    (output_dir / "evaluation.prototext").write_text(prototext, encoding="utf-8")
     return 0
 
 

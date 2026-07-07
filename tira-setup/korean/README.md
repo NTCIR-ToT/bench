@@ -14,7 +14,7 @@ tira_configs:
   resolve_truths_to: "."
   baseline:
     link: https://github.com/NTCIR-ToT/bench/tree/main/tira-setup/naive-baseline
-    command: python /search.py --input $inputDataset --output $outputDir
+    command: /baseline.py $inputDataset/queries.jsonl $outputDir/run.txt.gz
     format:
       name: ["run.txt"]
   input_format:

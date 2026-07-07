@@ -3,7 +3,9 @@ FROM ubuntu:24.04
 
 ADD trec_eval /usr/bin/trec_eval
 
-RUN apt-get update && apt-get install -y python3
+RUN apt-get update && apt-get install -y python3 python3-pip && pip3 install tira --break-system-packages
+
+
 
 ADD eval.py /eval.py
 
