@@ -5,3 +5,5 @@ ADD trec_eval /usr/bin/trec_eval
 
 RUN apt-get update && apt-get install -y python3
 
+ADD eval.py /eval.py
+
