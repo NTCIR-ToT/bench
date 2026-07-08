@@ -20,15 +20,15 @@
       },
       {
         "id": "this-year-plus-other",
-        "display_value": "This year's TREC TOT training data + Other",
+        "display_value": "This year's TREC TOT training data + Other"
       },
       {
         "id": "no-training",
-        "display_value": "No Training data",
+        "display_value": "No Training data"
       },
       {
         "id": "other",
-        "display_value": "Other",
+        "display_value": "Other"
       }
     ]
   },
@@ -48,7 +48,7 @@
       },
       {
         "id": "without-llm",
-        "display_value": "No LLM was used to generate the run.",
+        "display_value": "No LLM was used to generate the run."
       }
     ]
   }
