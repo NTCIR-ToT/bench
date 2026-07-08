@@ -1,2 +1,14 @@
 qrels.txt
 queries.jsonl
+chinese-position-1/
+chinese-position-10/
+chinese-position-100/
+english-position-1/
+english-position-10/
+english-position-100/
+japanese-position-1/
+japanese-position-10/
+japanese-position-100/
+korean-position-1/
+korean-position-10/
+korean-position-100/
