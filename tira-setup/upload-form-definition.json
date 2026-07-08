@@ -10,22 +10,45 @@
     "type": "textarea"
   },
   {
-    "name": "example-foo",
-    "display_name": "EXXXAMPLE",
-    "type": "textarea"
-  },
-  {
-    "name": "Track",
-    "display_name": "asa",
+    "name": "training-data",
+    "display_name": "Training Data",
     "type": "select",
     "options": [
       {
-        "id": "main",
-        "display_value": "Main Track"
+        "id": "this-year",
+        "display_value": "This year's TREC TOT training data"
       },
       {
-        "id": "bio",
-        "display_value": "Biomedical Track"
+        "id": "this-year-plus-other",
+        "display_value": "This year's TREC TOT training data + Other",
+      },
+      {
+        "id": "no-training",
+        "display_value": "No Training data",
+      },
+      {
+        "id": "other",
+        "display_value": "Other",
+      }
+    ]
+  },
+  {
+    "name": "training-description",
+    "display_name": "If Applicable, pease describe your training",
+    "type": "textarea"
+  },
+  {
+    "name": "llm",
+    "display_name": "Do you use large language models in your approach?",
+    "type": "select",
+    "options": [
+      {
+        "id": "with-llm",
+        "display_value": "An LLM was used to generate the run."
+      },
+      {
+        "id": "without-llm",
+        "display_value": "No LLM was used to generate the run.",
       }
     ]
   }
