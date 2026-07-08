@@ -1,0 +1,32 @@
+[
+  {
+    "name": "run_id",
+    "display_name": "Run ID",
+    "type": "text"
+  },
+  {
+    "name": "description",
+    "display_name": "Description",
+    "type": "textarea"
+  },
+  {
+    "name": "example-foo",
+    "display_name": "EXXXAMPLE",
+    "type": "textarea"
+  },
+  {
+    "name": "Track",
+    "display_name": "asa",
+    "type": "select",
+    "options": [
+      {
+        "id": "main",
+        "display_value": "Main Track"
+      },
+      {
+        "id": "bio",
+        "display_value": "Biomedical Track"
+      }
+    ]
+  }
+]

@@ -12,6 +12,7 @@ configs:
 tira_configs:
   resolve_inputs_to: "."
   resolve_truths_to: "."
+  default_upload_name: "run.txt.gz"
   baseline:
     link: https://github.com/NTCIR-ToT/bench/tree/main/tira-setup/naive-baseline
     command: /baseline.py $inputDataset/queries.jsonl $outputDir/run.txt.gz
