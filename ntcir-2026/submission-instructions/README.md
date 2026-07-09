@@ -17,7 +17,7 @@ Please go to [https://www.tira.io/](https://www.tira.io/) and click on "Sign Up"
 
 After you have logged in to TIRA, please navigate to the NTCIR ToT task at [https://www.tira.io/task-overview/ntcir-tot](https://www.tira.io/task-overview/ntcir-tot). There, please click on "Register".
 
-<img width="1801" height="750" alt="Screenshot_20260624_211840" src="https://github.com/user-attachments/assets/b058b8a7-88d4-450c-a63b-303b1c5a27e0" />
+<img width="3607" height="1642" alt="Screenshot_20260709_212117" src="https://github.com/user-attachments/assets/756622e7-2c32-459d-a13b-e57b7d9f2f50" />
 
 
 ### Step 3: Private Team Chat to Discuss Technical Aspects
@@ -27,7 +27,7 @@ After registration, [Maik](https://www.tira.io/u/maik_froebe) will start a priva
 
 ### Step 4 (Optional): Manage your team
 
-If you want to add others to your team, please navigate to your groups (under the hamburger menu) at [https://www.tira.io/g?type=my](https://www.tira.io/g?type=my)
+If you want to add others to your team (so that they also can upload), please navigate to your groups (under the hamburger menu) at [https://www.tira.io/g?type=my](https://www.tira.io/g?type=my)
 
 </details>
 
@@ -45,7 +45,11 @@ All submissions must be gzip-compressed run files. (e.g., a file `run.txt.gz`.)
 <details>
 <summary>Step 1: Upload Your Run</summary>
 
-TBD.:
+After you registered your team, you can go to the submission page [https://www.tira.io/task-overview/ntcir-tot](https://www.tira.io/task-overview/ntcir-tot) and click on "Submit" and then on "Upload new Run". A form like below will show where we ask a few questions on your run:
+
+<img width="3054" height="1642" alt="Screenshot_20260709_212455" src="https://github.com/user-attachments/assets/ebf61fca-224d-4a07-8d61-8b13e77bf3b5" />
+
+When you have filled out the questions, you can upload your run. The upload form directly checks if the uploaded run is syntactically valid and only accepts valid run files.
 
 </details>
 
@@ -55,7 +59,12 @@ TBD.:
 <details>
 <summary>Step 2: Feedback by Organizers</summary>
 
-Example ...
+After you have uploaded your run, it will appear under "Your Uploaded Runs". We make (additionally to the checks that the run file is syntactically valid that happen automatically during the upload) a manual review. The evaluation scores will remain blinded until the submission deadline is over. During the review of the run, we will look at its evaluation scores, and in case there seems to be an error (e.g., queries without retrieved documents, or very low effectiveness scores), we will give you feedback that you can look into the potential problem (we will not reveal the evaluation score, we will only give lightweight feedback such as "looks ok" or "there seems to be an error, please have a look").
+
+The review is manually, and we do it usually within a day, if everything looks good, the "Your Uploaded Runs" entry will look like:
+
+<img width="2976" height="345" alt="Screenshot_20260709_212810" src="https://github.com/user-attachments/assets/71a9f9fd-7ffe-4402-86a2-38034407a466" />
+
 
 </details>
 
