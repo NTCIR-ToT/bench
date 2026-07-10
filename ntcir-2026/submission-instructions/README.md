@@ -3,31 +3,11 @@
 <details>
 <summary>Prerequisite: Register to the TOT task at NTCIR. Create an Account at TIRA.io and register a team to NTCIR-ToT in TIRA</summary>
 
-### Step 0: Register to the Tip-of-my-Tongue shared task at NTCIR
+We assume that you already [registered to the ToT shared task](https://research.nii.ac.jp/ntcir/ntcir-19/howto.html) at NTCIR (the registration is already closed).
 
-We assume that you already registered to the ToT shared task at NTCIR (the deadline for registration is over now).
-
-### Step 1: Create an Account at TIRA
-
-Please go to [https://www.tira.io/](https://www.tira.io/) and click on "Sign Up" to create a new account or "Log In" if you already have an account. You can either create an new account or Log in via GitHub.
+Please create an account at TIRA (which we use . Please go to [https://www.tira.io/](https://www.tira.io/) and click on "Sign Up" to create a new account or "Log In" if you already have an account.
 
 <img width="1042" height="965" alt="Screenshot_20251210_074005" src="https://github.com/user-attachments/assets/6f05d18d-3b03-4314-94b4-b1136613b362" />
-
-### Step 2: Register Your Team to NTCIR ToT
-
-After you have logged in to TIRA, please navigate to the NTCIR ToT task at [https://www.tira.io/task-overview/ntcir-tot](https://www.tira.io/task-overview/ntcir-tot). There, please click on "Register".
-
-<img width="3607" height="1642" alt="Screenshot_20260709_212117" src="https://github.com/user-attachments/assets/756622e7-2c32-459d-a13b-e57b7d9f2f50" />
-
-
-### Step 3: Private Team Chat to Discuss Technical Aspects
-
-After registration, [Maik](https://www.tira.io/u/maik_froebe) will start a private chat with you in TIRA (by default, messages will be forwarded to your e-mail). We will use this chat to help you with the submission process or to resolve other questions.
-
-
-### Step 4 (Optional): Manage your team
-
-If you want to add others to your team (so that they also can upload), please navigate to your groups (under the hamburger menu) at [https://www.tira.io/g?type=my](https://www.tira.io/g?type=my)
 
 </details>
 
