@@ -8,7 +8,7 @@ Please **create a new account** on [TIRA](https://www.tira.io/) by clicking on "
 
 ## Upload Runs to NTCIR-ToT in TIRA
 
-Please go to the [submission page](https://www.tira.io/task-overview/ntcir-tot) and click on "Submit" and then on "Upload new Run".
+Please go to the [submission page](https://www.tira.io/task-overview/ntcir-tot) and click on "SUBMIT" and then on "UPLOAD NEW RUN".
 Next, please fill out the runs details in the submission form that should look like the following:
 
 <img width="3054" height="1642" alt="Screenshot_20260709_212455" src="https://github.com/user-attachments/assets/ebf61fca-224d-4a07-8d61-8b13e77bf3b5" />
@@ -26,14 +26,12 @@ A sample runfile format is shown below. White space is used to separate columns.
 ```
 
 , where:
-
 * The first column is the query (topic) ID.
 * The second column is currently unused and should always be "Q0".
 * The third column is the official identifier of the retrieved document.
 * The fourth column is the rank the document is retrieved.
 * The fifth column is the score (integer or floating point) that generated the ranking. This score must be in descending (non-increasing) order.
 * The sixth column is the ID of the run you are submitting.
-
 
 After you have uploaded your run, it will appear under "Your Uploaded Runs".
 
