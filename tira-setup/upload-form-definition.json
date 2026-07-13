@@ -5,8 +5,50 @@
     "type": "text"
   },
   {
+    "name": "team",
+    "display_name": "Team",
+    "type": "select",
+    "options": [
+      { 
+        "id": "AITOK",
+        "display_value": "AITOK: Tokushima University A5 Laboratory NTCIR Team"
+      }, 
+      {
+        "id": "TMUNLP",
+        "display_value": "TMUNLP: Taipei Medical University NLPLAB Team"
+      },
+      {
+        "id": "retrank",
+        "display_value": "retrank"
+      },
+      {
+        "id": "SBINT",
+        "display_value": "SBINT: SB Intuitions Corp. AppliedAI team"
+      },
+      {
+        "id": "NYCUNLP",
+        "display_value": "NYCUNLP: National Yang Ming Chiao Tung University NLP Team"
+      },
+      {
+        "id": "webis",
+        "display_value": "webiss"
+      },
+      {
+        "id": "dsgt2026",
+        "display_value": "DS@GT ARC"
+      },
+      {
+        "id": "ufmg",
+        "display_value": "ufmg: LATIN"
+      },
+      {
+        "id": "UBCS",
+        "display_value": "UBCS: University of Botswana Computer Science Team"
+      }
+    ]},
+  {
     "name": "description",
-    "display_name": "Description",
+    "display_name": "Description (please describe your approach in as much details as possible)",
     "type": "textarea"
   },
   {
@@ -20,26 +62,26 @@
       },
       {
         "id": "this-year-plus-other",
-        "display_value": "This year's TREC TOT training data + Other"
+        "display_value": "This year's TREC TOT training data + Other training data"
+      },
+      {
+        "id": "other",
+        "display_value": "Other training data"
       },
       {
         "id": "no-training",
         "display_value": "No Training data"
       },
-      {
-        "id": "other",
-        "display_value": "Other"
-      }
     ]
   },
   {
     "name": "training-description",
-    "display_name": "If Applicable, pease describe your training",
+    "display_name": "If you used any training data other than this year's TREC TOT training data, please describe the datasets in detail",
     "type": "textarea"
   },
   {
     "name": "llm",
-    "display_name": "Do you use large language models in your approach?",
+    "display_name": "Did you use large language models in your approach?",
     "type": "select",
     "options": [
       {
