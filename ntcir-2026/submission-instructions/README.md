@@ -26,7 +26,7 @@ A sample runfile format is shown below. White space is used to separate columns.
 1 Q0 pid5    5 1.89 runid1
 ```
 
-, where:
+Where:
 * The first column is the query (topic) ID.
 * The second column is currently unused and should always be "Q0".
 * The third column is the official identifier of the retrieved document.
