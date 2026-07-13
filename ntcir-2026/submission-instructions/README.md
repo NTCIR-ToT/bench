@@ -11,7 +11,8 @@ Please **create a new account** on [TIRA](https://www.tira.io/) by clicking on "
 Please go to the [submission page](https://www.tira.io/task-overview/ntcir-tot) and click on "SUBMIT" and then on "UPLOAD NEW RUN".
 Next, please fill out the runs details in the submission form that should look like the following:
 
-<img width="3054" height="1642" alt="Screenshot_20260709_212455" src="https://github.com/user-attachments/assets/ebf61fca-224d-4a07-8d61-8b13e77bf3b5" />
+<img width="1573" height="933" alt="Screenshot_20260713_111021" src="https://github.com/user-attachments/assets/5da52fe0-d9cd-4f8e-a312-174f873c8e1c" />
+
 
 After you hit "NEXT", please upload your run file.
 All submissions must be gzip-compressed run files (e.g., a file `run.txt.gz`.)
