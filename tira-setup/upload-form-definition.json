@@ -12,10 +12,14 @@
       { 
         "id": "AITOK",
         "display_value": "AITOK: Tokushima University A5 Laboratory NTCIR Team"
-      }, 
+      },
       {
-        "id": "TMUNLP",
-        "display_value": "TMUNLP: Taipei Medical University NLPLAB Team"
+        "id": "dsgt2026",
+        "display_value": "DS@GT ARC"
+      },
+      {
+        "id": "NYCUNLP",
+        "display_value": "NYCUNLP: National Yang Ming Chiao Tung University NLP Team"
       },
       {
         "id": "retrank",
@@ -26,24 +30,24 @@
         "display_value": "SBINT: SB Intuitions Corp. AppliedAI team"
       },
       {
-        "id": "NYCUNLP",
-        "display_value": "NYCUNLP: National Yang Ming Chiao Tung University NLP Team"
+        "id": "TMUNLP",
+        "display_value": "TMUNLP: Taipei Medical University NLPLAB Team"
       },
       {
-        "id": "webis",
-        "display_value": "webiss"
-      },
-      {
-        "id": "dsgt2026",
-        "display_value": "DS@GT ARC"
+        "id": "UBCS",
+        "display_value": "UBCS: University of Botswana Computer Science Team"
       },
       {
         "id": "ufmg",
         "display_value": "ufmg: LATIN"
       },
       {
-        "id": "UBCS",
-        "display_value": "UBCS: University of Botswana Computer Science Team"
+        "id": "webis",
+        "display_value": "webis"
+      },
+      {
+        "id": "organizer",
+        "display_value": "organizer"
       }
     ]},
   {
