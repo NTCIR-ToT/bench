@@ -90,7 +90,7 @@ def main() -> None:
                     doc_id = relevant_documents[query_id]
                 score = DOCS_PER_QUERY - rank + 1
                 output_file.write(
-                    f"{query_id} Q0 {doc_id} {rank} {score} {RUN_NAME}\n"
+                    f"{(4500+int(query_id)):04d} Q0 {doc_id} {rank} {score} {RUN_NAME}\n"
                 )
 
 
