@@ -77,9 +77,10 @@ def parse_trec_eval_output(trec_eval_output: str) -> dict:
 
 
 def run_trec_eval(qrels_path: Path, run_path: Path, measures=None) -> str:
-    command = ["trec_eval"]
+    command = ["trec_eval", "-q"]
     if measures is not None:
         command.extend(["-m", measures])
+
     command.extend([str(qrels_path), str(run_path)])
     result = subprocess.run(command, check=True, capture_output=True, text=True)
     return result.stdout
