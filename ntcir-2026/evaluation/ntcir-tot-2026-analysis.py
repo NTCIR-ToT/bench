@@ -15,6 +15,7 @@ import matplotlib
 matplotlib.use("Agg")
 
 import matplotlib.pyplot as plt
+from matplotlib.lines import Line2D
 import numpy as np
 import pandas as pd
 import seaborn as sns
@@ -572,6 +573,109 @@ def plot_metric_distribution_by_language(
     save_figure(fig, output_dir / "metric-distribution-by-run.pdf")
 
 
+def plot_metric_distribution_by_topic_and_language(
+    per_topic_by_language: pd.DataFrame,
+    output_dir: Path,
+    metric: str = "ndcg_cut_1000",
+) -> None:
+    """Single-metric figure with one panel per language, showing the
+    per-topic mean (solid line, shaded 50% percentile interval) and
+    median (dashed line) across all runs of that language, with topics
+    ordered by descending median score."""
+    languages = list(dict.fromkeys(per_topic_by_language["language"]))
+    fig, axes = plt.subplots(
+        1, len(languages), figsize=(max(4 * len(languages), 8), 5), sharey=True
+    )
+    axes = np.atleast_1d(axes)
+    for col, (ax, language) in enumerate(zip(axes, languages)):
+        subset = per_topic_by_language.loc[
+            per_topic_by_language["language"] == language
+        ]
+        order = (
+            subset.groupby("topic_id")[metric]
+            .median()
+            .sort_values(ascending=False)
+            .index
+        )
+        temp_df = subset.copy()
+        temp_df["topic_id"] = pd.Categorical(
+            temp_df["topic_id"], categories=order, ordered=True
+        )
+        temp_df = temp_df.sort_values("topic_id")
+
+        sns.lineplot(
+            x="topic_id",
+            y=metric,
+            data=temp_df,
+            ax=ax,
+            errorbar=("pi", 50),
+            color="grey",
+        )
+        median_df = (
+            temp_df.groupby("topic_id", observed=True)[metric]
+            .median()
+            .reset_index()
+        )
+        sns.lineplot(
+            x="topic_id",
+            y=metric,
+            data=median_df,
+            ax=ax,
+            linestyle="dashed",
+            color="grey",
+        )
+        ax.set_ylabel(METRIC_LABELS.get(metric, metric))
+        ax.set_xlabel(language)
+        ax.set_xticks([])
+        ax.set_ylim(0, 1)
+        if col == 0:
+            legend_elements = [
+                Line2D([0], [0], color="grey", lw=1, label="mean"),
+                Line2D(
+                    [0], [0], color="grey", lw=1, label="median", linestyle="dashed"
+                ),
+            ]
+            ax.legend(handles=legend_elements, loc="upper left")
+    save_figure(
+        fig,
+        output_dir / "metric-distribution-by-topic-and-query-source-mean-median.pdf",
+    )
+
+
+def plot_metric_distribution_by_topic_across_languages(
+    per_topic_by_language: pd.DataFrame,
+    output_dir: Path,
+    metric: str = "ndcg_cut_1000",
+) -> None:
+    """Single-metric figure with one row per language, showing the IQR
+    band, mean, and median NDCG@1000 across topics (topics ordered by
+    ascending median score), matching the per-language topic plot."""
+    languages = list(dict.fromkeys(per_topic_by_language["language"]))
+    fig, axes = plt.subplots(
+        len(languages), 1, figsize=(20, max(3 * len(languages), 4)), squeeze=False
+    )
+    for row, language in enumerate(languages):
+        ax = axes[row, 0]
+        subset = per_topic_by_language.loc[
+            per_topic_by_language["language"] == language
+        ]
+        grouped = subset.groupby("topic_id")[metric]
+        order = grouped.median().sort_values().index
+        means = grouped.mean().reindex(order)
+        medians = grouped.median().reindex(order)
+        lower = grouped.quantile(0.25).reindex(order)
+        upper = grouped.quantile(0.75).reindex(order)
+        x = np.arange(len(order))
+        ax.fill_between(x, lower, upper, color="lightgrey", label="IQR")
+        ax.plot(x, means, color="grey", label="mean")
+        ax.plot(x, medians, color="black", linestyle="--", label="median")
+        ax.set_ylabel(f"{language}\n{METRIC_LABELS.get(metric, metric)}")
+        ax.set_ylim(0, 1)
+        ax.set_xticks(x)
+        ax.set_xticklabels(order, rotation=90, fontsize=3)
+        ax.legend(loc="upper left")
+    save_figure(fig, output_dir / "metric-distribution-by-topic.pdf")
+
 
 def plot_metric_distribution_by_topic(
     data: LanguageData, output_dir: Path, metrics: list[str]
@@ -860,6 +964,8 @@ def main(
     )
     combined_per_topic = pd.concat(all_per_topic, ignore_index=True)
     plot_metric_distribution_by_language(combined_per_topic, output_dir)
+    plot_metric_distribution_by_topic_and_language(combined_per_topic, output_dir)
+    plot_metric_distribution_by_topic_across_languages(combined_per_topic, output_dir)
     click.echo(f"Wrote analyses to {output_dir}")
 
 
