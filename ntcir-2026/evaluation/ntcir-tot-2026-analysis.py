@@ -47,12 +47,6 @@ LANGUAGE_NAMES = {
     "ko": "Korean",
     "zh": "Chinese",
 }
-LANGUAGE_COLORS = {
-    "English": "green",
-    "Japanese": "red",
-    "Korean": "blue",
-    "Chinese": "orange",
-}
 
 
 def default_data_root() -> Path:
@@ -619,10 +613,9 @@ def plot_metric_distribution_by_topic_and_language(
         lower = grouped.quantile(0.25).reindex(order)
         upper = grouped.quantile(0.75).reindex(order)
         x = np.arange(len(order))
-        color = LANGUAGE_COLORS.get(language, "grey")
-        ax.fill_between(x, lower, upper, color=color, alpha=0.2, label="IQR")
-        ax.plot(x, means, color=color, label="mean")
-        ax.plot(x, medians, color=color, linestyle="--", label="median")
+        ax.fill_between(x, lower, upper, color="lightgrey", label="IQR")
+        ax.plot(x, means, color="grey", label="mean")
+        ax.plot(x, medians, color="black", linestyle="--", label="median")
         ax.set_xticks(x)
         ax.set_xticklabels(order, fontsize=6)
         for tick_label in ax.get_xticklabels():
