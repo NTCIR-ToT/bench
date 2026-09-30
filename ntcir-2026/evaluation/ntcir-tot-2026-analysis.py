@@ -517,6 +517,62 @@ def plot_metric_distribution_by_run(
     save_figure(fig, output_dir / "metric-distribution-by-run.pdf")
 
 
+def plot_metric_distribution_by_language(
+    per_topic_by_language: pd.DataFrame,
+    output_dir: Path,
+    metric: str = "ndcg_cut_1000",
+) -> None:
+    """Single-metric figure with one panel ("box") per language; within
+    each panel, every run that participated in that language gets its own
+    boxplot of per-topic scores.
+
+    Panel widths are scaled by the share of runs each language
+    contributes to the total number of runs across all languages.
+    """
+    languages = list(dict.fromkeys(per_topic_by_language["language"]))
+    run_counts = [
+        per_topic_by_language.loc[
+            per_topic_by_language["language"] == language, "run_id"
+        ].nunique()
+        for language in languages
+    ]
+    total_runs = sum(run_counts)
+    width_ratios = [count / total_runs for count in run_counts]
+
+    fig, axes = plt.subplots(
+        1,
+        len(languages),
+        figsize=(max(4 * len(languages), 8), 5),
+        sharey=True,
+        gridspec_kw={"width_ratios": width_ratios},
+    )
+    for ax, language in zip(np.atleast_1d(axes), languages):
+        subset = per_topic_by_language.loc[
+            per_topic_by_language["language"] == language
+        ]
+        order = subset.groupby("run_id")[metric].mean().sort_values().index.tolist()
+        values = [
+            subset.loc[subset["run_id"] == run_id, metric].to_numpy()
+            for run_id in order
+        ]
+        ax.boxplot(
+            values,
+            tick_labels=order,
+            flierprops={"marker": "d", "markersize": 3},
+            medianprops={"linewidth": 3.0},
+        )
+        ax.tick_params(axis="x", labelsize=6)
+        for tick_label in ax.get_xticklabels():
+            tick_label.set_rotation(45)
+            tick_label.set_ha("right")
+        ax.set_title(language)
+        ax.set_ylim(0, 1)
+    axes = np.atleast_1d(axes)
+    axes[0].set_ylabel(METRIC_LABELS.get(metric, metric))
+    save_figure(fig, output_dir / "metric-distribution-by-run.pdf")
+
+
+
 def plot_metric_distribution_by_topic(
     data: LanguageData, output_dir: Path, metrics: list[str]
 ) -> None:
@@ -683,7 +739,7 @@ def analyze_language(
     language: str,
     metrics: list[str],
     primary_metric: str,
-) -> tuple[dict, pd.DataFrame]:
+) -> tuple[dict, pd.DataFrame, pd.DataFrame]:
     data = build_language_data(data_root, language, metrics, primary_metric)
     output_dir = output_root / language
     output_dir.mkdir(parents=True, exist_ok=True)
@@ -712,7 +768,9 @@ def analyze_language(
 
     results = data.run_results.copy()
     results.insert(0, "language", language)
-    return summary, results
+    per_topic = data.per_topic.copy()
+    per_topic.insert(0, "language", LANGUAGE_NAMES.get(language, language))
+    return summary, results, per_topic
 
 
 @click.command()
@@ -767,11 +825,12 @@ def main(
 
     summaries = []
     all_results = []
+    all_per_topic = []
     for language in selected_languages:
         click.echo(
             f"Analyzing {LANGUAGE_NAMES.get(language, language)} ({language})"
         )
-        summary, results = analyze_language(
+        summary, results, per_topic = analyze_language(
             data_root,
             output_dir,
             language,
@@ -780,6 +839,7 @@ def main(
         )
         summaries.append(summary)
         all_results.append(results)
+        all_per_topic.append(per_topic)
 
     (output_dir / "participation-summary.json").write_text(
         json.dumps(summaries, indent=2, ensure_ascii=False) + "\n",
@@ -798,6 +858,8 @@ def main(
         selected_metrics,
         primary_metric,
     )
+    combined_per_topic = pd.concat(all_per_topic, ignore_index=True)
+    plot_metric_distribution_by_language(combined_per_topic, output_dir)
     click.echo(f"Wrote analyses to {output_dir}")
 
 
