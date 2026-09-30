@@ -33,6 +33,14 @@ METRIC_LABELS = {
     "recip_rank": "MRR",
     "recall_1000": "Recall@1000",
 }
+LLM_SYMBOLS = {
+    "with-llm": r"$\checkmark$",
+    "without-llm": r"$\times$",
+}
+TRAINING_DATA_LABELS = {
+    "this-year": "This Year",
+    "no-training": "None",
+}
 LANGUAGE_NAMES = {
     "en": "English",
     "ja": "Japanese",
@@ -210,7 +218,6 @@ def build_language_data(
         .sort_values(primary_metric, ascending=False)
         .reset_index(drop=True)
     )
-    run_results.insert(0, "rank", np.arange(1, len(run_results) + 1))
     return LanguageData(language, metadata, per_topic, run_results)
 
 
@@ -256,28 +263,229 @@ def latex_escape(value: object) -> str:
     return text
 
 
-def write_result_tables(
-    data: LanguageData, output_dir: Path, metrics: list[str]
+def bold_best_scores(
+    latex_results: pd.DataFrame,
+    metrics: list[str],
+    group_columns: list[str] | None = None,
+) -> pd.DataFrame:
+    """Wrap the highest value of each metric column in \\textbf{}.
+
+    When ``group_columns`` is given, the highest value is determined
+    separately within each group (e.g. per language) instead of over the
+    whole table.
+    """
+    latex_results = latex_results.copy()
+    metric_columns = [METRIC_LABELS.get(metric, metric) for metric in metrics]
+    metric_columns = [column for column in metric_columns if column in latex_results.columns]
+    if not metric_columns:
+        return latex_results
+
+    groups = (
+        latex_results.groupby(group_columns).groups
+        if group_columns
+        else {None: latex_results.index}
+    )
+    for column in metric_columns:
+        latex_results[column] = latex_results[column].map(lambda value: f"{value:.4f}")
+    for indices in groups.values():
+        for column in metric_columns:
+            best_index = latex_results.loc[indices, column].astype(float).idxmax()
+            latex_results.loc[best_index, column] = (
+                r"\textbf{" + latex_results.loc[best_index, column] + "}"
+            )
+    return latex_results
+
+
+def write_results_table(
+    results: pd.DataFrame,
+    output_dir: Path,
+    stem: str,
+    text_columns: list[str],
+    caption: str,
+    label: str,
+    latex_column_transforms: dict[str, dict] | None = None,
+    bold_max_metrics: list[str] | None = None,
+    bold_group_columns: list[str] | None = None,
+    custom_latex_builder=None,
 ) -> None:
-    columns = ["rank", "run_id", "team", "training_data", "llm", *metrics]
-    results = data.run_results[columns].copy()
-    results.to_csv(output_dir / "results.csv", index=False, float_format="%.4f")
-    (output_dir / "results.html").write_text(
+    results.to_csv(output_dir / f"{stem}.csv", index=False, float_format="%.4f")
+    (output_dir / f"{stem}.html").write_text(
         results.to_html(index=False, float_format=lambda value: f"{value:.4f}"),
         encoding="utf-8",
     )
 
     latex_results = results.rename(columns=METRIC_LABELS).copy()
-    for column in ["run_id", "team", "training_data", "llm"]:
+    transforms = latex_column_transforms or {}
+    for column, mapping in transforms.items():
+        latex_results[column] = latex_results[column].map(mapping)
+    for column in text_columns:
+        if column in transforms:
+            continue
         latex_results[column] = latex_results[column].map(latex_escape)
-    latex = latex_results.to_latex(
-        index=False,
-        float_format="%.4f",
-        escape=False,
+    if bold_max_metrics:
+        column_format = "".join(
+            "l" if pd.api.types.is_object_dtype(latex_results[column]) else "r"
+            for column in latex_results.columns
+        )
+        latex_results = bold_best_scores(
+            latex_results, bold_max_metrics, bold_group_columns
+        )
+    else:
+        column_format = None
+    if custom_latex_builder is not None:
+        latex = custom_latex_builder(latex_results, column_format, caption, label)
+    else:
+        latex_results = latex_results.rename(columns=latex_escape)
+        latex = latex_results.to_latex(
+            index=False,
+            float_format="%.4f",
+            escape=False,
+            caption=caption,
+            label=label,
+            column_format=column_format,
+        )
+    (output_dir / f"{stem}.tex").write_text(latex, encoding="utf-8")
+
+
+def build_grouped_latex_table(
+    latex_results: pd.DataFrame,
+    column_format: str | None,
+    caption: str,
+    label: str,
+    group_column: str,
+    header_labels: dict[str, str] | None = None,
+) -> str:
+    """Render a LaTeX table with a \\midrule between groups and the group
+    column collapsed into a \\multirow cell instead of being repeated."""
+    labels = header_labels or {}
+    columns = list(latex_results.columns)
+    headers = [latex_escape(labels.get(column, column)) for column in columns]
+    if column_format is None:
+        column_format = "".join(
+            "l" if pd.api.types.is_object_dtype(latex_results[column]) else "r"
+            for column in columns
+        )
+    column_format = "@{}" + column_format + "@{}"
+    group_index = columns.index(group_column)
+
+    lines = [
+        r"\begin{table}",
+        r"\caption{" + caption + "}",
+        r"\label{" + label + "}",
+        r"\begin{tabular}{" + column_format + "}",
+        r"\toprule",
+        " & ".join(headers) + r" \\",
+        r"\midrule",
+    ]
+    groups = list(latex_results.groupby(group_column, sort=False))
+    for group_position, (group_value, group_df) in enumerate(groups):
+        rows = group_df.reset_index(drop=True)
+        for row_position, row in rows.iterrows():
+            values = [str(value) for value in row.tolist()]
+            if row_position == 0:
+                values[group_index] = (
+                    r"\multirow{" + str(len(rows)) + "}{*}{" + str(group_value) + "}"
+                )
+            else:
+                values[group_index] = ""
+            lines.append(" & ".join(values) + r" \\")
+        if group_position < len(groups) - 1:
+            lines.append(r"\midrule")
+    lines.append(r"\bottomrule")
+    lines.append(r"\end{tabular}")
+    lines.append(r"\end{table}")
+    return "\n".join(lines) + "\n"
+
+
+def write_result_tables(
+    data: LanguageData, output_dir: Path, metrics: list[str]
+) -> None:
+    columns = ["run_id", "team", "training_data", "llm", *metrics]
+    results = data.run_results[columns].copy()
+    write_results_table(
+        results,
+        output_dir,
+        "results",
+        ["run_id", "team", "training_data", "llm"],
         caption=f"NTCIR-2026 ToT results for {data.language}.",
         label=f"tab:results-{data.language}",
     )
-    (output_dir / "results.tex").write_text(latex, encoding="utf-8")
+
+
+def write_combined_result_table(
+    all_results: pd.DataFrame,
+    output_dir: Path,
+    metrics: list[str],
+    primary_metric: str,
+) -> None:
+    columns = ["language", "run_id", "team", "training_data", "llm", *metrics]
+    results = (
+        all_results[columns]
+        .sort_values(["language", primary_metric], ascending=[True, False])
+        .reset_index(drop=True)
+    )
+    results["language"] = results["language"].map(
+        lambda value: LANGUAGE_NAMES.get(value, value)
+    )
+    write_results_table(
+        results,
+        output_dir,
+        "table-results-all-languages",
+        ["language", "run_id", "team", "training_data", "llm"],
+        caption="NTCIR-2026 ToT results across all languages.",
+        label="table-results-all-languages",
+        latex_column_transforms={
+            "training_data": TRAINING_DATA_LABELS,
+            "llm": LLM_SYMBOLS,
+        },
+        bold_max_metrics=metrics,
+        bold_group_columns=["language"],
+        custom_latex_builder=lambda latex_results, column_format, caption, label: (
+            build_grouped_latex_table(
+                latex_results,
+                column_format,
+                caption,
+                label,
+                group_column="language",
+                header_labels={
+                    "language": "Language",
+                    "run_id": "Run",
+                    "team": "Team",
+                    "llm": "LLM",
+                },
+            )
+        ),
+    )
+
+
+def write_combined_best_per_team_table(
+    all_results: pd.DataFrame,
+    output_dir: Path,
+    metrics: list[str],
+    primary_metric: str,
+) -> None:
+    columns = ["language", "run_id", "team", "training_data", "llm", *metrics]
+    best_per_team = (
+        all_results[columns]
+        .sort_values(primary_metric, ascending=False)
+        .groupby(["language", "team"], as_index=False)
+        .first()
+    )
+    best_per_team["language"] = best_per_team["language"].map(
+        lambda value: LANGUAGE_NAMES.get(value, value)
+    )
+    results = best_per_team.sort_values(
+        ["language", primary_metric], ascending=[True, False]
+    ).reset_index(drop=True)
+    write_results_table(
+        results,
+        output_dir,
+        "results-all-languages-best-per-team",
+        ["language", "run_id", "team", "training_data", "llm"],
+        caption="NTCIR-2026 ToT best run per team across all languages.",
+        label="tab:results-all-languages-best-per-team",
+        latex_column_transforms={"llm": LLM_SYMBOLS},
+    )
 
 
 def save_figure(fig: plt.Figure, path: Path) -> None:
@@ -577,10 +785,18 @@ def main(
         json.dumps(summaries, indent=2, ensure_ascii=False) + "\n",
         encoding="utf-8",
     )
-    pd.concat(all_results, ignore_index=True).to_csv(
-        output_dir / "results-all-languages.csv",
-        index=False,
-        float_format="%.4f",
+    combined_results = pd.concat(all_results, ignore_index=True)
+    write_combined_result_table(
+        combined_results,
+        output_dir,
+        selected_metrics,
+        primary_metric,
+    )
+    write_combined_best_per_team_table(
+        combined_results,
+        output_dir,
+        selected_metrics,
+        primary_metric,
     )
     click.echo(f"Wrote analyses to {output_dir}")
 
