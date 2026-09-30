@@ -15,7 +15,6 @@ import matplotlib
 matplotlib.use("Agg")
 
 import matplotlib.pyplot as plt
-from matplotlib.lines import Line2D
 import numpy as np
 import pandas as pd
 import seaborn as sns
@@ -47,6 +46,12 @@ LANGUAGE_NAMES = {
     "ja": "Japanese",
     "ko": "Korean",
     "zh": "Chinese",
+}
+LANGUAGE_COLORS = {
+    "English": "green",
+    "Japanese": "red",
+    "Korean": "blue",
+    "Chinese": "orange",
 }
 
 
@@ -578,64 +583,56 @@ def plot_metric_distribution_by_topic_and_language(
     output_dir: Path,
     metric: str = "ndcg_cut_1000",
 ) -> None:
-    """Single-metric figure with one panel per language, showing the
-    per-topic mean (solid line, shaded 50% percentile interval) and
-    median (dashed line) across all runs of that language, with topics
-    ordered by descending median score."""
+    """Single-metric figure with one panel ("box") per language, laid
+    out exactly like plot_metric_distribution_by_language (panel widths
+    scaled by each language's share of total runs, x-axis items = runs
+    ordered by ascending mean score). Instead of boxplot glyphs, each
+    run's per-topic distribution is rendered as a mean line with a
+    shaded IQR band and a dashed median line.
+    """
     languages = list(dict.fromkeys(per_topic_by_language["language"]))
+    run_counts = [
+        per_topic_by_language.loc[
+            per_topic_by_language["language"] == language, "run_id"
+        ].nunique()
+        for language in languages
+    ]
+    total_runs = sum(run_counts)
+    width_ratios = [count / total_runs for count in run_counts]
+
     fig, axes = plt.subplots(
-        1, len(languages), figsize=(max(4 * len(languages), 8), 5), sharey=True
+        1,
+        len(languages),
+        figsize=(max(4 * len(languages), 8), 5),
+        sharey=True,
+        gridspec_kw={"width_ratios": width_ratios},
     )
     axes = np.atleast_1d(axes)
     for col, (ax, language) in enumerate(zip(axes, languages)):
         subset = per_topic_by_language.loc[
             per_topic_by_language["language"] == language
         ]
-        order = (
-            subset.groupby("topic_id")[metric]
-            .median()
-            .sort_values(ascending=False)
-            .index
-        )
-        temp_df = subset.copy()
-        temp_df["topic_id"] = pd.Categorical(
-            temp_df["topic_id"], categories=order, ordered=True
-        )
-        temp_df = temp_df.sort_values("topic_id")
-
-        sns.lineplot(
-            x="topic_id",
-            y=metric,
-            data=temp_df,
-            ax=ax,
-            errorbar=("pi", 50),
-            color="grey",
-        )
-        median_df = (
-            temp_df.groupby("topic_id", observed=True)[metric]
-            .median()
-            .reset_index()
-        )
-        sns.lineplot(
-            x="topic_id",
-            y=metric,
-            data=median_df,
-            ax=ax,
-            linestyle="dashed",
-            color="grey",
-        )
-        ax.set_ylabel(METRIC_LABELS.get(metric, metric))
-        ax.set_xlabel(language)
-        ax.set_xticks([])
+        grouped = subset.groupby("run_id")[metric]
+        order = grouped.mean().sort_values().index
+        means = grouped.mean().reindex(order)
+        medians = grouped.median().reindex(order)
+        lower = grouped.quantile(0.25).reindex(order)
+        upper = grouped.quantile(0.75).reindex(order)
+        x = np.arange(len(order))
+        color = LANGUAGE_COLORS.get(language, "grey")
+        ax.fill_between(x, lower, upper, color=color, alpha=0.2, label="IQR")
+        ax.plot(x, means, color=color, label="mean")
+        ax.plot(x, medians, color=color, linestyle="--", label="median")
+        ax.set_xticks(x)
+        ax.set_xticklabels(order, fontsize=6)
+        for tick_label in ax.get_xticklabels():
+            tick_label.set_rotation(45)
+            tick_label.set_ha("right")
+        ax.set_title(language)
         ax.set_ylim(0, 1)
         if col == 0:
-            legend_elements = [
-                Line2D([0], [0], color="grey", lw=1, label="mean"),
-                Line2D(
-                    [0], [0], color="grey", lw=1, label="median", linestyle="dashed"
-                ),
-            ]
-            ax.legend(handles=legend_elements, loc="upper left")
+            ax.legend(loc="upper left")
+    axes[0].set_ylabel(METRIC_LABELS.get(metric, metric))
     save_figure(
         fig,
         output_dir / "metric-distribution-by-topic-and-query-source-mean-median.pdf",
