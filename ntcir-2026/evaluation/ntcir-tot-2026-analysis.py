@@ -667,6 +667,142 @@ def plot_metric_distribution_by_topic_across_languages(
     save_figure(fig, output_dir / "metric-distribution-by-topic.pdf")
 
 
+QUERY_TYPE_LABELS = {"film": "Film", "general": "General", "human": "Person"}
+
+
+def default_query_data_dir() -> Path:
+    return Path(__file__).resolve().parent.parent / "data"
+
+
+def load_query_types(
+    query_data_dir: Path, split: str, topic_id_offset: int
+) -> pd.DataFrame:
+    """Map evaluation topic ids to the query type (the `domain` field) of
+    the gold queries. Evaluation ids equal the gold query_id plus
+    topic_id_offset."""
+    rows = []
+    for language, language_name in LANGUAGE_NAMES.items():
+        path = query_data_dir / f"{language}_gold" / split / "queries.jsonl"
+        if not path.is_file():
+            continue
+        for query in load_jsonl(path):
+            rows.append(
+                {
+                    "language": language_name,
+                    "topic_id": str(int(query["query_id"]) + topic_id_offset),
+                    "query_type": QUERY_TYPE_LABELS.get(
+                        normalized(query.get("domain")),
+                        normalized(query.get("domain")),
+                    ),
+                    "query_source": normalized(query.get("source")),
+                }
+            )
+    return pd.DataFrame(rows)
+
+
+def add_query_types(
+    per_topic_by_language: pd.DataFrame, query_types: pd.DataFrame
+) -> pd.DataFrame:
+    merged = per_topic_by_language.merge(
+        query_types, on=["language", "topic_id"], how="left"
+    )
+    unmatched = merged["query_type"].isna()
+    if unmatched.any():
+        raise click.ClickException(
+            "No query type for topics: "
+            f"{sorted(merged.loc[unmatched, 'topic_id'].unique())[:10]}; "
+            "check --topic-id-offset and --query-data-dir"
+        )
+    return merged
+
+
+def plot_metric_distribution_by_query_type(
+    per_topic_by_language: pd.DataFrame,
+    output_dir: Path,
+    metric: str = "ndcg_cut_1000",
+) -> None:
+    """One panel per language: distribution of per-topic mean scores
+    (over runs) grouped by query type."""
+    languages = list(dict.fromkeys(per_topic_by_language["language"]))
+    topic_means = per_topic_by_language.groupby(
+        ["language", "topic_id", "query_type"], as_index=False
+    )[metric].mean()
+    order = sorted(topic_means["query_type"].unique())
+    fig, axes = plt.subplots(
+        1, len(languages), figsize=(max(4 * len(languages), 6), 4), sharey=True,
+        squeeze=False,
+    )
+    for ax, language in zip(axes[0], languages):
+        sns.boxplot(
+            data=topic_means.loc[topic_means["language"] == language],
+            x="query_type",
+            y=metric,
+            order=order,
+            palette="colorblind",
+            flierprops={"marker": "d", "markersize": 3},
+            ax=ax,
+        )
+        ax.set_title(language)
+        ax.set_xlabel(None)
+        ax.set_ylabel(METRIC_LABELS.get(metric, metric))
+        ax.set_ylim(0, 1)
+    save_figure(fig, output_dir / "metric-distribution-by-query-type.pdf")
+
+
+def plot_metric_distribution_by_topic_and_query_type(
+    per_topic_by_language: pd.DataFrame,
+    output_dir: Path,
+    metric: str = "ndcg_cut_1000",
+) -> None:
+    """One row per language with one panel ("box") per query type. Each
+    panel shows the IQR band, mean, and median across runs for the topics
+    of that type (topics ordered by ascending median score)."""
+    languages = list(dict.fromkeys(per_topic_by_language["language"]))
+    types = sorted(per_topic_by_language["query_type"].unique())
+    fig, axes = plt.subplots(
+        len(languages),
+        len(types),
+        figsize=(5 * len(types), max(3 * len(languages), 4)),
+        sharey=True,
+        squeeze=False,
+    )
+    for row, language in enumerate(languages):
+        for col, query_type in enumerate(types):
+            ax = axes[row, col]
+            subset = per_topic_by_language.loc[
+                (per_topic_by_language["language"] == language)
+                & (per_topic_by_language["query_type"] == query_type)
+            ]
+            grouped = subset.groupby("topic_id")[metric]
+            order = grouped.median().sort_values().index
+            x = np.arange(len(order))
+            ax.fill_between(
+                x,
+                grouped.quantile(0.25).reindex(order),
+                grouped.quantile(0.75).reindex(order),
+                color="lightgrey",
+                label="IQR",
+            )
+            ax.plot(x, grouped.mean().reindex(order), color="grey", label="mean")
+            ax.plot(
+                x,
+                grouped.median().reindex(order),
+                color="black",
+                linestyle="--",
+                label="median",
+            )
+            ax.set_ylim(0, 1)
+            ax.set_xticks(x)
+            ax.set_xticklabels(order, rotation=90, fontsize=3)
+            if row == 0:
+                ax.set_title(query_type)
+            if col == 0:
+                ax.set_ylabel(f"{language}\n{METRIC_LABELS.get(metric, metric)}")
+                if row == 0:
+                    ax.legend(loc="upper left")
+    save_figure(fig, output_dir / "metric-distribution-by-topic-and-query-type.pdf")
+
+
 def plot_metric_distribution_by_topic(
     data: LanguageData, output_dir: Path, metrics: list[str]
 ) -> None:
@@ -883,6 +1019,26 @@ def analyze_language(
     help="Directory in which language-specific outputs are created.",
 )
 @click.option(
+    "--query-data-dir",
+    type=click.Path(path_type=Path, file_okay=False),
+    default=default_query_data_dir,
+    show_default=True,
+    help="Directory containing <lang>_gold/<split>/queries.jsonl.",
+)
+@click.option(
+    "--query-split",
+    default="test",
+    show_default=True,
+    help="Split of the gold queries that was evaluated.",
+)
+@click.option(
+    "--topic-id-offset",
+    type=int,
+    default=4500,
+    show_default=True,
+    help="Evaluation topic id minus gold query_id (e.g. 4501 -> 0001).",
+)
+@click.option(
     "--language",
     "languages",
     multiple=True,
@@ -903,6 +1059,9 @@ def analyze_language(
 def main(
     data_root: Path,
     output_dir: Path,
+    query_data_dir: Path,
+    query_split: str,
+    topic_id_offset: int,
     languages: tuple[str, ...],
     metrics: tuple[str, ...],
     primary_metric: str,
@@ -956,6 +1115,15 @@ def main(
     plot_metric_distribution_by_language(combined_per_topic, output_dir)
     plot_metric_distribution_by_topic_and_language(combined_per_topic, output_dir)
     plot_metric_distribution_by_topic_across_languages(combined_per_topic, output_dir)
+    query_types = load_query_types(
+        query_data_dir.expanduser().resolve(), query_split, topic_id_offset
+    )
+    if query_types.empty:
+        click.echo(f"No gold queries in {query_data_dir}; skipping query-type plots")
+    else:
+        typed_per_topic = add_query_types(combined_per_topic, query_types)
+        plot_metric_distribution_by_query_type(typed_per_topic, output_dir)
+        plot_metric_distribution_by_topic_and_query_type(typed_per_topic, output_dir)
     click.echo(f"Wrote analyses to {output_dir}")
 
 
